@@ -65,3 +65,14 @@ CREATE POLICY "Usuários podem atualizar seus próprios daily_closings"
   ON daily_closings FOR UPDATE
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+-- Políticas DELETE (necessárias para edição com mudança de data)
+DROP POLICY IF EXISTS "Usuários podem deletar seus próprios closing_items" ON closing_items;
+CREATE POLICY "Usuários podem deletar seus próprios closing_items"
+  ON closing_items FOR DELETE
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Usuários podem deletar seus próprios daily_closings" ON daily_closings;
+CREATE POLICY "Usuários podem deletar seus próprios daily_closings"
+  ON daily_closings FOR DELETE
+  USING (auth.uid() = user_id);

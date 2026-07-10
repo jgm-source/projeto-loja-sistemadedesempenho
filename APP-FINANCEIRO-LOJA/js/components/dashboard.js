@@ -2,6 +2,9 @@
 // DASHBOARD — Tela principal com cards, cálculos e gráfico
 // =============================================================================
 
+let forecastBaseOffset = 1
+let forecastCompareOffset = 0
+
 function renderDashboard() {
   if (window._chartInstance) {
     window._chartInstance.destroy()
@@ -19,6 +22,7 @@ function renderDashboard() {
         <button class="btn btn-primary" onclick="navigate('/closing')">
           + Novo Fechamento
         </button>
+        <button class="btn btn-outline theme-toggle" onclick="toggleTheme()">🌙</button>
         <button class="btn btn-outline" onclick="handleLogout()">Sair</button>
       </div>
     </div>
@@ -79,7 +83,7 @@ async function loadDashboardData() {
       fetchPeriodData(user.id, week.start, week.end),
       fetchPeriodData(user.id, month.start, month.end),
       fetchWeekdayVolume(user.id, month.start, month.end),
-      calculateForecast(),
+      calculateForecast(forecastBaseOffset, forecastCompareOffset),
     ])
 
     updateCards(todayData, weekData, monthData)
@@ -252,11 +256,47 @@ function updateCards(todayData, weekData, monthData) {
   `
 }
 
+function getForecastMonthOptions() {
+  const options = []
+  for (let i = 0; i <= 11; i++) {
+    const range = getMonthRangeByOffset(i)
+    const label = i === 0 ? `Este mês (${getMonthName(range.year, range.month)})` : i === 1 ? `Mês anterior (${getMonthName(range.year, range.month)})` : getMonthName(range.year, range.month)
+    options.push({ value: i, label })
+  }
+  return options
+}
+
 function updateForecast(data) {
   const card = document.getElementById('forecastCard')
+  const monthOptions = getForecastMonthOptions()
+
+  const selectsHtml = `
+    <div class="forecast-selectors">
+      <div class="forecast-selector">
+        <label for="forecastBaseSelect">Mês base:</label>
+        <select id="forecastBaseSelect" onchange="onForecastChange()">
+          ${monthOptions.map(o => `
+            <option value="${o.value}" ${Number(o.value) === forecastBaseOffset ? 'selected' : ''}>${o.label}</option>
+          `).join('')}
+        </select>
+      </div>
+      <div class="forecast-selector">
+        <label for="forecastCompareSelect">Comparar com:</label>
+        <select id="forecastCompareSelect" onchange="onForecastChange()">
+          ${monthOptions.map(o => `
+            <option value="${o.value}" ${Number(o.value) === forecastCompareOffset ? 'selected' : ''}>${o.label}</option>
+          `).join('')}
+        </select>
+      </div>
+    </div>
+  `
+
   if (!data || data.trend === 'neutral') {
     card.innerHTML = `
-      <h3>📈 Previsão de Faturamento</h3>
+      <div class="forecast-header">
+        <h3>📈 Previsão de Faturamento</h3>
+      </div>
+      ${selectsHtml}
       <p class="forecast-neutral">${data ? data.message : 'Sem dados suficientes'}</p>
     `
     return
@@ -266,26 +306,68 @@ function updateForecast(data) {
   const trendIcon = data.trend === 'up' ? '📈' : '📉'
 
   card.innerHTML = `
-    <h3>📈 Previsão de Faturamento</h3>
+    <div class="forecast-header">
+      <h3>📈 Previsão de Faturamento</h3>
+    </div>
+    ${selectsHtml}
     <div class="forecast-details ${trendClass}">
       <p class="forecast-message">${trendIcon} ${data.message}</p>
       <div class="forecast-values">
         <div>
-          <span class="forecast-label">Mês anterior</span>
-          <span class="forecast-value">${formatCurrency(data.previousTotal)}</span>
+          <span class="forecast-label">${data.baseMonthName}</span>
+          <span class="forecast-value">${formatCurrency(data.baseTotal)}</span>
         </div>
         <div>
-          <span class="forecast-label">Mês atual</span>
-          <span class="forecast-value">${formatCurrency(data.currentTotal)}</span>
+          <span class="forecast-label">${data.compareMonthName}</span>
+          <span class="forecast-value">${formatCurrency(data.compareTotal)}</span>
         </div>
         <div class="forecast-divider"></div>
         <div>
-          <span class="forecast-label">Previsão próximo mês</span>
+          <span class="forecast-label">Previsão: ${data.forecastMonthName}</span>
           <span class="forecast-value forecast-highlight">${formatCurrency(data.forecast)}</span>
         </div>
       </div>
     </div>
   `
+}
+
+async function onForecastChange() {
+  const baseSelect = document.getElementById('forecastBaseSelect')
+  const compareSelect = document.getElementById('forecastCompareSelect')
+  if (!baseSelect || !compareSelect) return
+
+  forecastBaseOffset = Number(baseSelect.value)
+  forecastCompareOffset = Number(compareSelect.value)
+
+  const card = document.getElementById('forecastCard')
+  const monthOptions = getForecastMonthOptions()
+  card.innerHTML = `
+    <div class="forecast-header">
+      <h3>📈 Previsão de Faturamento</h3>
+    </div>
+    <div class="forecast-selectors">
+      <div class="forecast-selector">
+        <label for="forecastBaseSelect">Mês base:</label>
+        <select id="forecastBaseSelect" onchange="onForecastChange()">
+          ${monthOptions.map(o => `
+            <option value="${o.value}" ${Number(o.value) === forecastBaseOffset ? 'selected' : ''}>${o.label}</option>
+          `).join('')}
+        </select>
+      </div>
+      <div class="forecast-selector">
+        <label for="forecastCompareSelect">Comparar com:</label>
+        <select id="forecastCompareSelect" onchange="onForecastChange()">
+          ${monthOptions.map(o => `
+            <option value="${o.value}" ${Number(o.value) === forecastCompareOffset ? 'selected' : ''}>${o.label}</option>
+          `).join('')}
+        </select>
+      </div>
+    </div>
+    <p class="forecast-loading">Calculando...</p>
+  `
+
+  const data = await calculateForecast(forecastBaseOffset, forecastCompareOffset)
+  updateForecast(data)
 }
 
 function updateChart(weekdayData) {

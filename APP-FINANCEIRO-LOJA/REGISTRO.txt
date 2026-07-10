@@ -250,3 +250,36 @@ Formato: [DATA] [HORA] | STATUS | DESCRIÇÃO
                               | diff > 0 ? diff : 0 (mostrava R$ 0,00 quando
                               | diff negativo), agora usa Math.abs(diff).
 -------------------------------------------------------------------------------
+[2026-07-10] [--:--] | FIX     | closing.js + schema.sql: Corrigido bug ao editar
+                              | fechamento com mudança de data. Antes, os itens
+                              | da nova data não eram limpos antes de reinserir,
+                              | causando duplicação. Agora deleta itens da nova
+                              | data antes de inserir. Adicionadas políticas RLS
+                              | de DELETE nas tabelas closing_items e
+                              | daily_closings (faltavam no schema.sql).
+-------------------------------------------------------------------------------
+[2026-07-10] [--:--] | FEATURE | forecast.js + dashboard.js + helpers.js + style.css:
+                              | Adicionado seletor de mês na Previsão de Faturamento.
+                              | Por padrão compara mês atual com anterior, mas usuário
+                              | pode selecionar qualquer outro mês para comparar
+                              | com o atual. helpers.js: getMonthName,
+                              | getMonthRangeByOffset. dashboard.js:
+                              | forecastCompareOffset, onForecastMonthChange.
+-------------------------------------------------------------------------------
+[2026-07-10] [--:--] | FEATURE | forecast.js + dashboard.js + helpers.js + style.css:
+                              | Substituído seletor único por dois seletores:
+                              | "Mês base" (mais antigo) e "Comparar com" (mais
+                              | recente). Agora é possível comparar quaisquer dois
+                              | meses, ex: comparar mês 5 com mês 6. calculateForecast
+                              | aceita baseOffset e compareOffset. A previsão projeta
+                              | o mês seguinte ao mês de comparação. helpers.js:
+                              | getNextMonthName para exibir nome do mês projetado.
+-------------------------------------------------------------------------------
+[2026-07-10] [--:--] | FEATURE | style.css + helpers.js + login.js + dashboard.js +
+                              | app.js: Adicionado Dark Mode completo. Variáveis
+                              | CSS em [data-theme="dark"] com paleta escura para
+                              | todos os elementos (cards, inputs, backgrounds,
+                              | shadows, status colors). Botão toggle (🌙/☀️) no
+                              | header do dashboard e no footer do login.
+                              | Persistência em localStorage. Transições suaves.
+-------------------------------------------------------------------------------

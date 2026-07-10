@@ -278,6 +278,14 @@ async function saveClosing() {
           .eq('date', closingEditDate)
 
         if (delClosingError) throw delClosingError
+
+        const { error: delNewItemsError } = await supabase
+          .from('closing_items')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('date', date)
+
+        if (delNewItemsError) throw delNewItemsError
       }
     }
 

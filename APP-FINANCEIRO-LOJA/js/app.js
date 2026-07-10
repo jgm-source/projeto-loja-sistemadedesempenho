@@ -60,6 +60,8 @@ function initRouter() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+  initTheme()
+
   if (typeof supabase === 'undefined') {
     document.getElementById('app').innerHTML = `
       <div class="setup-warning">
@@ -85,3 +87,4 @@ window.calculateInconsistency = calculateInconsistency
 window.editClosing = editClosing
 window.deleteClosing = deleteClosing
 window.updateDateDisplay = updateDateDisplay
+window.onForecastChange = onForecastChange

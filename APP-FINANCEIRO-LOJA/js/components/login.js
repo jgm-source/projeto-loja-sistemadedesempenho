@@ -28,6 +28,7 @@ function renderLogin() {
         </form>
         <div class="login-footer">
           <p>Não tem conta? <a href="#" id="showSignup">Criar conta</a></p>
+          <p style="margin-top:8px"><a href="#" class="theme-toggle" onclick="toggleTheme();return false">🌙</a></p>
         </div>
       </div>
     </div>
@@ -66,6 +67,7 @@ function renderSignup() {
         </form>
         <div class="login-footer">
           <p>Já tem conta? <a href="#" id="showLogin">Fazer login</a></p>
+          <p style="margin-top:8px"><a href="#" class="theme-toggle" onclick="toggleTheme();return false">🌙</a></p>
         </div>
       </div>
     </div>

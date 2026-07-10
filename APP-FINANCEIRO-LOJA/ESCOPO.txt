@@ -1,0 +1,14 @@
+terá uma área de login no qual o usuário criará sua conta
+
+usaremos banco de dados do supabase para criar as tabelas 
+
+na tela principal terá um botão criar fechamento do dia, onde o usuário preencherá informações  para um fechamento do caixa como: salgados R$600,00 e bebidas R$700,00, o usuário poderá definir o valor e o nome do item inserido, o sistema poderá exibir o faturamento total do dia, ao salvar a informação, se a pessoa digitar o faturamento manualmente o sistema coloca a diferença que deu de inconsistência mas mantem o faturamento que a pessoa digitou, porem adicionando um item "incosistencia de  R$XX,00"
+
+
+o objetivo desse sistema é exibir o faturamento total do dia, a media diária na semana, quando a semana fechar mostrar o faturamento total da semana, quando o mês fechar mostrar o faturamento total do mês e mostrar a media diária, a media semanal, exibir os dias da semana que mais tem volume de faturamento
+
+mostrar previsão de futuro faturamento no mês seguinte se manter o índice de crescimento caso contrario mostrar a previsão de queda se estiver e queda
+
+isso tudo será feito com as seguintes ferramentas:
+
+html - css - javascript - banco de dados (supabase)

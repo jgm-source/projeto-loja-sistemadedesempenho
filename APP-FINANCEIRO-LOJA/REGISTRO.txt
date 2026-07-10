@@ -1,0 +1,252 @@
+================================================================================
+                   APP FINANCEIRO LOJA — REGISTRO DO PROJETO
+================================================================================
+
+DATA DE INÍCIO: 09/07/2026
+AUTOR: opencode (assistente IA)
+
+================================================================================
+                              PLANO DO PROJETO
+================================================================================
+
+1. VISÃO GERAL
+---------------
+Sistema financeiro para loja onde o usuário registra fechamentos de caixa
+diários, visualiza dashboards com faturamento (diário, semanal, mensal),
+médias, dias de maior volume, e previsão de faturamento futuro.
+
+2. STACK TECNOLÓGICA
+--------------------
+- HTML5 (SPA - Single Page Application)
+- CSS3 (puro, sem frameworks)
+- JavaScript (vanilla, sem frameworks)
+- Supabase (Auth + Banco de Dados PostgreSQL)
+- Chart.js (CDN) para gráficos
+
+3. ESTRUTURA DE ARQUIVOS
+-------------------------
+APP-FINANCEIRO-LOJA/
+├── index.html                 # Entry point único da SPA
+├── REGISTRO.txt               # Este documento
+├── ESCOPO.txt                 # Escopo original
+├── css/
+│   └── style.css              # Estilos globais do sistema
+├── js/
+│   ├── app.js                 # Router SPA + lógica principal
+│   ├── supabase.js            # Configuração e init do Supabase
+│   ├── auth.js                # Autenticação (login/logout)
+│   ├── components/
+│   │   ├── login.js           # Tela de login
+│   │   ├── dashboard.js       # Dashboard com cards, cálculos, gráfico
+│   │   └── closing.js         # Formulário de fechamento do dia
+│   └── utils/
+│       ├── forecast.js        # Cálculo de previsão futura
+│       └── helpers.js         # Utilitários (formatação, data, moeda)
+└── database/
+    └── schema.sql             # Script SQL das tabelas do Supabase
+
+4. ROTAS DA SPA
+---------------
+/login       → Tela de login (autenticação via Supabase Auth)
+/dashboard   → Dashboard principal com cards e gráficos
+/closing     → Formulário de fechamento do caixa do dia
+
+5. BANCO DE DADOS (SUPABASE)
+-----------------------------
+
+Tabela: closing_items
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid()
+  user_id               UUID NOT NULL REFERENCES auth.users(id)
+  date                  DATE NOT NULL
+  item_name             VARCHAR(255) NOT NULL
+  amount                DECIMAL(10,2) NOT NULL
+  is_inconsistency      BOOLEAN DEFAULT FALSE
+  created_at            TIMESTAMPTZ DEFAULT NOW()
+
+Tabela: daily_closings
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid()
+  user_id               UUID NOT NULL REFERENCES auth.users(id)
+  date                  DATE NOT NULL UNIQUE(user_id, date)
+  manual_total          DECIMAL(10,2)
+  calculated_total      DECIMAL(10,2) NOT NULL
+  inconsistency         DECIMAL(10,2) DEFAULT 0
+  created_at            TIMESTAMPTZ DEFAULT NOW()
+
+6. FUNCIONALIDADES
+------------------
+
+6.1 Login
+  - Login com email e senha via Supabase Auth
+  - Proteção de rotas (redireciona para /login se não autenticado)
+  - Logout
+
+6.2 Fechamento do Dia
+  - Formulário dinâmico: usuário adiciona itens (nome + valor)
+  - Soma automática dos itens (calculated_total)
+  - Opção de digitar faturamento manual (manual_total)
+  - Se manual_total != calculated_total → cria item "Inconsistência"
+  - Salva closing_items + daily_closings no Supabase
+
+6.3 Dashboard
+  - Card: Faturamento de Hoje
+  - Card: Total da Semana + Média Diária na Semana
+  - Card: Total do Mês + Média Diária + Média Semanal
+  - Gráfico: Dias da semana com maior volume de faturamento
+  - Previsão: projeção do próximo mês baseada em crescimento %
+
+6.4 Previsão de Faturamento
+  - Compara mês anterior com mês atual
+  - Taxa de crescimento = (atual - anterior) / anterior
+  - Previsão = total mês atual × (1 + taxa)
+  - Se taxa negativa → exibe alerta de queda
+
+7. FLUXO DE USO
+---------------
+  Usuário → Login → Dashboard (visão geral)
+                    → Novo Fechamento → Preenche itens → Salva
+                    → Dashboard atualizado com novos dados
+                    → Previsão calculada automaticamente
+
+================================================================================
+                STATUS — REGISTRO DE ALTERAÇÕES E PROGRESSO
+================================================================================
+
+Formato: [DATA] [HORA] | STATUS | DESCRIÇÃO
+-------------------------------------------------------------------------------
+[2026-07-09] [17:23] | CRIADO  | Documento REGISTRO.txt criado com plano completo
+                              | e seção de status para acompanhamento do projeto.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | database/schema.sql — Script completo das tabelas
+                              | closing_items e daily_closings com RLS policies.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | js/supabase.js — Configuração do cliente Supabase
+                              | (requer chaves do usuário).
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | js/helpers.js — Utilitários: formatCurrency,
+                              | formatDateBR, todayStr, getWeekRange, getMonthRange,
+                              | getPreviousMonthRange, getWeekdayName.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | js/utils/forecast.js — Cálculo de previsão futura:
+                              | compara mês anterior com atual, calcula % de
+                              | crescimento, projeta próximo mês.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | js/auth.js — Funções de autenticação: signIn,
+                              | signUp, signOut, getUser, onAuthChange.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | js/components/login.js — Tela de login com
+                              | formulário de entrada e criação de conta.
+                              | Validação de erros e feedback de carregamento.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | js/components/closing.js — Formulário de
+                              | fechamento do dia: adição dinâmica de itens,
+                              | soma automática, cálculo de inconsistência
+                              | quando valor manual é diferente, salvamento
+                              | no Supabase (closing_items + daily_closings).
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | js/components/dashboard.js — Dashboard completo:
+                              | cards de hoje, semana, mês, melhor dia;
+                              | gráfico de dias da semana via Chart.js;
+                              | previsão de faturamento futuro.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | js/app.js — Router SPA baseado em hash, proteção
+                              | de rotas, inicialização do app, verificação de
+                              | configuração do Supabase.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | css/style.css — Estilos completos responsivos:
+                              | cards, formulários, login, dashboard, animações
+                              | skeleton loading, layout responsivo.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:25] | CRIADO  | index.html — Entry point da SPA, carrega
+                              | Supabase JS (CDN), Chart.js (CDN), e todos os
+                              | módulos JavaScript do projeto.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:27] | CONTA   | Conta criada no Supabase Auth para o email
+                              | celiamatias46@gmail.com (ID: 501272a2).
+                              | Necessário confirmar e-mail ou desativar
+                              | confirmação no painel do Supabase.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:35] | FIX     | Correção de compatibilidade com Supabase JS v2:
+                              | auth.js: signIn → signInWithPassword, getUser()
+                              | agora usa cache de sessão em vez de auth.user()
+                              | (removido no v2). Adicionado initAuth().
+                              | app.js: initRouter aguarda initAuth().
+                              | forecast.js: supabase.auth.user() → getUser().
+-------------------------------------------------------------------------------
+[2026-07-09] [17:35] | FIX     | dashboard.js: Chart.js - destruir instância
+                              | anterior antes de recriar (evita "Canvas is
+                              | already in use"). Tratamento amigável para
+                              | tabelas não criadas no banco.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:40] | FEATURE | closing.js: Data editável no formulário de
+                              | fechamento — substituído texto fixo por input
+                              | type="date" com valor padrão = hoje.
+                              | saveClosing() lê data do input.
+                              | CSS: .closing-date-input estilizado.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:45] | FIX     | style.css: Corrigido layout infinito no
+                              | dashboard-grid — adicionado overflow: hidden
+                              | nos cards inferiores, max-height 260px no
+                              | canvas do Chart.js, min-height: 0 no .card.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:55] | FEATURE | dashboard.js: Adicionada tabela "Fechamentos
+                              | Anteriores" com data, total, faturamento,
+                              | inconsistência, botões de editar (✏️) e
+                              | excluir (🗑️). Funções: fetchAllClosings,
+                              | updateClosingsTable, editClosing, deleteClosing.
+                              | deleteClosing com confirmação via confirm().
+-------------------------------------------------------------------------------
+[2026-07-09] [17:58] | FIX     | index.html: Trocar CDN do Supabase de unpkg.com
+                              | para jsdelivr.net (evita bloqueio de Tracking
+                              | Prevention do navegador). Adicionado favicon
+                              | inline (emoji 💰) para evitar erro 404.
+-------------------------------------------------------------------------------
+[2026-07-09] [18:52] | FIX     | closing.js: Data agora editável tanto em novo
+                              | quanto em edição. Ao editar com data alterada,
+                              | deleta registros da data original (closingEditDate)
+                              | antes de inserir na nova data.
+-------------------------------------------------------------------------------
+[2026-07-09] [19:05] | FEATURE | closing.js + style.css: Adicionado display
+                              | da data em DD/MM/YYYY ao lado do input date.
+                              | Função updateDateDisplay() atualiza o texto
+                              | formatado quando o usuário altera a data.
+                              | CSS: .closing-date-text estilizado.
+-------------------------------------------------------------------------------
+[2026-07-09] [18:48] | FIX     | app.js: navigate() agora extrai basePath da URL
+                              | com query params. Ao chamar navigate('/closing?date=X'),
+                              | parseHash() extrai path='/closing' e params={date:X}.
+                              | Exposto editClosing e deleteClosing em window.
+-------------------------------------------------------------------------------
+[2026-07-09] [18:43] | FIX     | index.html: Scripts CDN substituídos por
+                              | arquivos locais em lib/ para evitar Tracking
+                              | Prevention do navegador. Baixados:
+                              | lib/supabase.min.js (207KB) e lib/chart.min.js
+                              | (209KB). Scripts locais = mesmo origem, sem
+                              | bloqueio de storage.
+-------------------------------------------------------------------------------
+[2026-07-09] [17:55] | FEATURE | closing.js: Adicionado modo de edição.
+                              | renderClosing(editDate) aceita data opcional.
+                              | loadClosingForEdit() carrega itens existentes
+                              | e preenche o formulário. Data fica disabled
+                              | no modo edição. saveClosing() trata atualização
+                              | deletando itens antigos antes de reinserir.
+                              | app.js: parseHash() extrai query params da
+                              | hash (#/closing?date=2026-07-09). renderRoute
+                              | passa params para as funções de rota.
+                              | CSS: .closings-table, .table-wrapper,
+                              | .btn-danger, .actions-cell estilizados.
+-------------------------------------------------------------------------------
+[2026-07-10] [--:--] | FIX     | dashboard.js: Média diária do mês agora divide pelo
+                              | número total de dias do mês (ex: 31, 30, 28/29) em
+                              | vez de dividir apenas pelos dias com fechamento.
+                              | Adicionado daysInMonth com cálculo via Date.
+-------------------------------------------------------------------------------
+[2026-07-10] [--:--] | FEATURE | closing.js: Itens agora aceitam valores negativos
+                              | (saídas/despesas). Removido min="0" dos inputs de
+                              | valor (item-value, manualTotal) em todas as
+                              | ocorrências (renderClosing, addItem,
+                              | loadClosingForEdit). Alterado validação em
+                              | saveClosing() de value > 0 para value !== 0.
+                              | Corrigido display da inconsistência: usava
+                              | diff > 0 ? diff : 0 (mostrava R$ 0,00 quando
+                              | diff negativo), agora usa Math.abs(diff).
+-------------------------------------------------------------------------------

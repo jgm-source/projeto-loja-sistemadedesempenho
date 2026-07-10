@@ -461,7 +461,7 @@ function updateClosingsTable(closings) {
     <tr>
       <td>${formatDateBR(c.date)}</td>
       <td>${formatCurrency(Number(c.calculated_total))}</td>
-      <td>${c.manual_total ? formatCurrency(Number(c.manual_total)) : '-'}</td>
+      <td>${c.manual_total != null ? formatCurrency(Number(c.manual_total)) : formatCurrency(Number(c.calculated_total))}</td>
       <td>${Number(c.inconsistency) !== 0 ? formatCurrency(Number(c.inconsistency)) : '-'}</td>
       <td class="actions-cell">
         <button class="btn btn-sm btn-outline" onclick="editClosing('${c.date}')">✏️</button>

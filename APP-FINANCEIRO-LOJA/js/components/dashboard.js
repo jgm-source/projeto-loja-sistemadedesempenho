@@ -136,7 +136,7 @@ async function loadDashboardData() {
 async function fetchDayTotal(userId, date) {
   const { data, error } = await supabase
     .from('daily_closings')
-    .select('calculated_total, manual_total, inconsistency')
+    .select('calculated_total, total_revenue, manual_total, inconsistency')
     .eq('user_id', userId)
     .eq('date', date)
     .single()
@@ -145,6 +145,7 @@ async function fetchDayTotal(userId, date) {
   return data
     ? {
         total: Number(data.calculated_total),
+        revenue: Number(data.total_revenue || data.calculated_total),
         manualTotal: data.manual_total ? Number(data.manual_total) : null,
         inconsistency: Number(data.inconsistency),
       }
@@ -192,7 +193,8 @@ async function fetchWeekdayVolume(userId, start, end) {
 function updateCards(todayData, weekData, monthData) {
   const cardsGrid = document.getElementById('dashboardCards')
 
-  const todayTotal = todayData ? todayData.total : 0
+  const todayRevenue = todayData ? todayData.revenue : 0
+  const todayNet = todayData ? todayData.total : 0
   const todayInconsistency = todayData ? todayData.inconsistency : 0
 
   const now = new Date()
@@ -203,10 +205,11 @@ function updateCards(todayData, weekData, monthData) {
       <div class="card-icon">📅</div>
       <div class="card-content">
         <h3>Faturamento Hoje</h3>
-        <p class="card-value">${formatCurrency(todayTotal)}</p>
-        ${todayInconsistency !== 0
-          ? `<p class="card-note">Inconsistência: ${formatCurrency(todayInconsistency)}</p>`
-          : '<p class="card-note">Nenhum fechamento hoje</p>'}
+        <p class="card-value">${formatCurrency(todayRevenue)}</p>
+        <p class="card-note">
+          Líquido: ${formatCurrency(todayNet)}
+          ${todayInconsistency !== 0 ? ` | Inconsistência: ${formatCurrency(todayInconsistency)}` : ''}
+        </p>
       </div>
     </div>
 
@@ -295,8 +298,8 @@ function updateForecast(data) {
     card.innerHTML = `
       <div class="forecast-header">
         <h3>📈 Previsão de Faturamento</h3>
+        ${selectsHtml}
       </div>
-      ${selectsHtml}
       <p class="forecast-neutral">${data ? data.message : 'Sem dados suficientes'}</p>
     `
     return
@@ -308,8 +311,8 @@ function updateForecast(data) {
   card.innerHTML = `
     <div class="forecast-header">
       <h3>📈 Previsão de Faturamento</h3>
+      ${selectsHtml}
     </div>
-    ${selectsHtml}
     <div class="forecast-details ${trendClass}">
       <p class="forecast-message">${trendIcon} ${data.message}</p>
       <div class="forecast-values">
@@ -344,23 +347,23 @@ async function onForecastChange() {
   card.innerHTML = `
     <div class="forecast-header">
       <h3>📈 Previsão de Faturamento</h3>
-    </div>
-    <div class="forecast-selectors">
-      <div class="forecast-selector">
-        <label for="forecastBaseSelect">Mês base:</label>
-        <select id="forecastBaseSelect" onchange="onForecastChange()">
-          ${monthOptions.map(o => `
-            <option value="${o.value}" ${Number(o.value) === forecastBaseOffset ? 'selected' : ''}>${o.label}</option>
-          `).join('')}
-        </select>
-      </div>
-      <div class="forecast-selector">
-        <label for="forecastCompareSelect">Comparar com:</label>
-        <select id="forecastCompareSelect" onchange="onForecastChange()">
-          ${monthOptions.map(o => `
-            <option value="${o.value}" ${Number(o.value) === forecastCompareOffset ? 'selected' : ''}>${o.label}</option>
-          `).join('')}
-        </select>
+      <div class="forecast-selectors">
+        <div class="forecast-selector">
+          <label for="forecastBaseSelect">Mês base:</label>
+          <select id="forecastBaseSelect" onchange="onForecastChange()">
+            ${monthOptions.map(o => `
+              <option value="${o.value}" ${Number(o.value) === forecastBaseOffset ? 'selected' : ''}>${o.label}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="forecast-selector">
+          <label for="forecastCompareSelect">Comparar com:</label>
+          <select id="forecastCompareSelect" onchange="onForecastChange()">
+            ${monthOptions.map(o => `
+              <option value="${o.value}" ${Number(o.value) === forecastCompareOffset ? 'selected' : ''}>${o.label}</option>
+            `).join('')}
+          </select>
+        </div>
       </div>
     </div>
     <p class="forecast-loading">Calculando...</p>
@@ -435,13 +438,41 @@ async function handleLogout() {
 async function fetchAllClosings(userId) {
   const { data, error } = await supabase
     .from('daily_closings')
-    .select('date, calculated_total, manual_total, inconsistency')
+    .select('date, calculated_total, total_revenue, manual_total, inconsistency')
     .eq('user_id', userId)
     .order('date', { ascending: false })
     .limit(50)
 
   if (error) throw error
-  return data || []
+
+  const closings = data || []
+
+  const datesToFix = closings
+    .filter(c => (c.total_revenue == null || Number(c.total_revenue) === 0) && Number(c.calculated_total) !== 0)
+    .map(c => c.date)
+
+  if (datesToFix.length > 0) {
+    const { data: items } = await supabase
+      .from('closing_items')
+      .select('date, amount')
+      .eq('user_id', userId)
+      .in('date', datesToFix)
+      .gt('amount', 0)
+
+    if (items) {
+      const revenueByDate = {}
+      items.forEach(item => {
+        revenueByDate[item.date] = (revenueByDate[item.date] || 0) + Number(item.amount)
+      })
+      closings.forEach(c => {
+        if (revenueByDate[c.date]) {
+          c.total_revenue = revenueByDate[c.date]
+        }
+      })
+    }
+  }
+
+  return closings
 }
 
 function updateClosingsTable(closings) {
@@ -457,18 +488,22 @@ function updateClosingsTable(closings) {
     return
   }
 
-  const rows = closings.map(c => `
-    <tr>
-      <td>${formatDateBR(c.date)}</td>
-      <td>${formatCurrency(Number(c.calculated_total))}</td>
-      <td>${c.manual_total != null ? formatCurrency(Number(c.manual_total)) : formatCurrency(Number(c.calculated_total))}</td>
-      <td>${Number(c.inconsistency) !== 0 ? formatCurrency(Number(c.inconsistency)) : '-'}</td>
-      <td class="actions-cell">
-        <button class="btn btn-sm btn-outline" onclick="editClosing('${c.date}')">✏️</button>
-        <button class="btn btn-sm btn-outline btn-danger" onclick="deleteClosing('${c.date}')">🗑️</button>
-      </td>
-    </tr>
-  `).join('')
+  const rows = closings.map(c => {
+    const revenue = c.total_revenue != null ? Number(c.total_revenue) : Number(c.calculated_total)
+    const net = Number(c.calculated_total)
+    return `
+      <tr>
+        <td>${formatDateBR(c.date)}</td>
+        <td>${formatCurrency(revenue)}</td>
+        <td class="${net < 0 ? 'text-danger' : ''}">${formatCurrency(net)}</td>
+        <td>${Number(c.inconsistency) !== 0 ? formatCurrency(Number(c.inconsistency)) : '-'}</td>
+        <td class="actions-cell">
+          <button class="btn btn-sm btn-outline" onclick="editClosing('${c.date}')">✏️</button>
+          <button class="btn btn-sm btn-outline btn-danger" onclick="deleteClosing('${c.date}')">🗑️</button>
+        </td>
+      </tr>
+    `
+  }).join('')
 
   section.innerHTML = `
     <div class="card">
@@ -481,8 +516,8 @@ function updateClosingsTable(closings) {
           <thead>
             <tr>
               <th>Data</th>
-              <th>Total Itens</th>
               <th>Faturamento</th>
+              <th>Líquido</th>
               <th>Inconsistência</th>
               <th class="actions-cell">Ações</th>
             </tr>

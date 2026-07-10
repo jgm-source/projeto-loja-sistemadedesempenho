@@ -1,2 +1,10 @@
+# =============================================================================
+# GITIGNORE RAIZ
+# =============================================================================
+
+# Google Drive
 acss.txt
 
+# App Financeiro - credenciais Supabase
+APP-FINANCEIRO-LOJA/.env
+APP-FINANCEIRO-LOJA/js/supabase.local.js

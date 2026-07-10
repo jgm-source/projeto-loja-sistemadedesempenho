@@ -26,10 +26,22 @@ CREATE TABLE IF NOT EXISTS daily_closings (
   date              DATE NOT NULL,
   manual_total      DECIMAL(10,2),
   calculated_total  DECIMAL(10,2) NOT NULL,
+  total_revenue     DECIMAL(10,2) DEFAULT 0,
   inconsistency     DECIMAL(10,2) DEFAULT 0,
   created_at        TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, date)
 );
+
+-- Adiciona coluna total_revenue se a tabela já existir (migração)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'daily_closings' AND column_name = 'total_revenue'
+  ) THEN
+    ALTER TABLE daily_closings ADD COLUMN total_revenue DECIMAL(10,2) DEFAULT 0;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_daily_closings_user_date
   ON daily_closings(user_id, date);
@@ -76,3 +88,15 @@ DROP POLICY IF EXISTS "Usuários podem deletar seus próprios daily_closings" ON
 CREATE POLICY "Usuários podem deletar seus próprios daily_closings"
   ON daily_closings FOR DELETE
   USING (auth.uid() = user_id);
+
+-- 4. BACKFILL: Preencher total_revenue para registros existentes
+UPDATE daily_closings dc
+SET total_revenue = COALESCE((
+  SELECT SUM(ci.amount)
+  FROM closing_items ci
+  WHERE ci.user_id = dc.user_id
+    AND ci.date = dc.date
+    AND ci.amount > 0
+    AND ci.is_inconsistency = FALSE
+), 0)
+WHERE dc.total_revenue IS NULL OR dc.total_revenue = 0;

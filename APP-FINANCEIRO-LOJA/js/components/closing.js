@@ -40,7 +40,15 @@ async function renderClosing(editDate) {
 
       <div class="closing-totals">
         <div class="total-row">
-          <span>Soma dos itens:</span>
+          <span>Faturamento (entradas):</span>
+          <span id="totalRevenue" class="text-success">R$ 0,00</span>
+        </div>
+        <div class="total-row total-row-sm">
+          <span>Saídas (despesas):</span>
+          <span id="totalExpenses" class="text-danger">R$ 0,00</span>
+        </div>
+        <div class="total-row total-row-lg">
+          <span>Valor Líquido:</span>
           <span id="calculatedTotal">R$ 0,00</span>
         </div>
         <div class="form-group">
@@ -157,20 +165,27 @@ function removeItem(btn) {
 
 function calculateInconsistency() {
   const values = document.querySelectorAll('.item-value')
-  let sum = 0
+  let revenue = 0
+  let expenses = 0
+
   values.forEach(input => {
     const v = parseFloat(input.value) || 0
-    sum += v
+    if (v > 0) revenue += v
+    else expenses += v
   })
 
-  document.getElementById('calculatedTotal').textContent = formatCurrency(sum)
+  const net = revenue + expenses
+
+  document.getElementById('totalRevenue').textContent = formatCurrency(revenue)
+  document.getElementById('totalExpenses').textContent = formatCurrency(expenses)
+  document.getElementById('calculatedTotal').textContent = formatCurrency(net)
 
   const manualInput = document.getElementById('manualTotal')
   const manual = parseFloat(manualInput.value)
   const infoEl = document.getElementById('inconsistencyInfo')
 
   if (manualInput.value && !isNaN(manual)) {
-    const diff = manual - sum
+    const diff = manual - net
     if (Math.abs(diff) > 0.01) {
       infoEl.style.display = 'block'
       infoEl.innerHTML = `
@@ -206,6 +221,7 @@ async function saveClosing() {
   const manual = parseFloat(manualInput.value)
 
   let sum = 0
+  let revenue = 0
   const items = []
 
   for (let i = 0; i < itemNames.length; i++) {
@@ -213,6 +229,7 @@ async function saveClosing() {
     const value = parseFloat(itemValues[i].value) || 0
     if (name && value !== 0) {
       sum += value
+      if (value > 0) revenue += value
       items.push({ name, value })
     }
   }
@@ -257,6 +274,7 @@ async function saveClosing() {
     date,
     manual_total: hasManual ? manual : null,
     calculated_total: sum,
+    total_revenue: revenue,
     inconsistency: hasManual ? inconsistency : 0,
   }
 

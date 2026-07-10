@@ -1,2 +1,9 @@
-acss.txt
+# =============================================================================
+# APP FINANCEIRO LOJA — .gitignore
+# =============================================================================
 
+# Arquivo de configuração local (credenciais do Supabase)
+supabase.local.js
+
+# Arquivo .env com credenciais
+.env

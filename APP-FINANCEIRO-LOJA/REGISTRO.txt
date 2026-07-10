@@ -235,12 +235,12 @@ Formato: [DATA] [HORA] | STATUS | DESCRIÇÃO
                               | CSS: .closings-table, .table-wrapper,
                               | .btn-danger, .actions-cell estilizados.
 -------------------------------------------------------------------------------
-[2026-07-10] [--:--] | FIX     | dashboard.js: Média diária do mês agora divide pelo
+[2026-07-10] [08:00] | FIX     | dashboard.js: Média diária do mês agora divide pelo
                               | número total de dias do mês (ex: 31, 30, 28/29) em
                               | vez de dividir apenas pelos dias com fechamento.
                               | Adicionado daysInMonth com cálculo via Date.
 -------------------------------------------------------------------------------
-[2026-07-10] [--:--] | FEATURE | closing.js: Itens agora aceitam valores negativos
+[2026-07-10] [08:30] | FEATURE | closing.js: Itens agora aceitam valores negativos
                               | (saídas/despesas). Removido min="0" dos inputs de
                               | valor (item-value, manualTotal) em todas as
                               | ocorrências (renderClosing, addItem,
@@ -250,7 +250,7 @@ Formato: [DATA] [HORA] | STATUS | DESCRIÇÃO
                               | diff > 0 ? diff : 0 (mostrava R$ 0,00 quando
                               | diff negativo), agora usa Math.abs(diff).
 -------------------------------------------------------------------------------
-[2026-07-10] [--:--] | FIX     | closing.js + schema.sql: Corrigido bug ao editar
+[2026-07-10] [09:00] | FIX     | closing.js + schema.sql: Corrigido bug ao editar
                               | fechamento com mudança de data. Antes, os itens
                               | da nova data não eram limpos antes de reinserir,
                               | causando duplicação. Agora deleta itens da nova
@@ -258,7 +258,7 @@ Formato: [DATA] [HORA] | STATUS | DESCRIÇÃO
                               | de DELETE nas tabelas closing_items e
                               | daily_closings (faltavam no schema.sql).
 -------------------------------------------------------------------------------
-[2026-07-10] [--:--] | FEATURE | forecast.js + dashboard.js + helpers.js + style.css:
+[2026-07-10] [10:00] | FEATURE | forecast.js + dashboard.js + helpers.js + style.css:
                               | Adicionado seletor de mês na Previsão de Faturamento.
                               | Por padrão compara mês atual com anterior, mas usuário
                               | pode selecionar qualquer outro mês para comparar
@@ -266,7 +266,7 @@ Formato: [DATA] [HORA] | STATUS | DESCRIÇÃO
                               | getMonthRangeByOffset. dashboard.js:
                               | forecastCompareOffset, onForecastMonthChange.
 -------------------------------------------------------------------------------
-[2026-07-10] [--:--] | FEATURE | forecast.js + dashboard.js + helpers.js + style.css:
+[2026-07-10] [11:00] | FEATURE | forecast.js + dashboard.js + helpers.js + style.css:
                               | Substituído seletor único por dois seletores:
                               | "Mês base" (mais antigo) e "Comparar com" (mais
                               | recente). Agora é possível comparar quaisquer dois
@@ -275,7 +275,7 @@ Formato: [DATA] [HORA] | STATUS | DESCRIÇÃO
                               | o mês seguinte ao mês de comparação. helpers.js:
                               | getNextMonthName para exibir nome do mês projetado.
 -------------------------------------------------------------------------------
-[2026-07-10] [--:--] | FEATURE | style.css + helpers.js + login.js + dashboard.js +
+[2026-07-10] [14:00] | FEATURE | style.css + helpers.js + login.js + dashboard.js +
                               | app.js: Adicionado Dark Mode completo. Variáveis
                               | CSS em [data-theme="dark"] com paleta escura para
                               | todos os elementos (cards, inputs, backgrounds,
@@ -283,3 +283,75 @@ Formato: [DATA] [HORA] | STATUS | DESCRIÇÃO
                               | header do dashboard e no footer do login.
                               | Persistência em localStorage. Transições suaves.
 -------------------------------------------------------------------------------
+[2026-07-10] [15:00] | FEATURE | schema.sql + closing.js + dashboard.js + style.css:
+                              | Separado Faturamento (soma itens positivos) de
+                              | Líquido (saldo = entradas + saídas).
+                              | closing.js exibe 3 linhas: Faturamento (verde),
+                              | Saídas (vermelho), Valor Líquido (destaque).
+                              | saveClosing salva total_revenue no banco.
+                              | dashboard.js: card Hoje mostra Faturamento+
+                              | Líquido. Tabela colunas: Faturamento | Líquido.
+                              | schema.sql: coluna total_revenue em daily_closings
+                              | + migração para tabela existente.
+                              | CSS: .text-success, .text-danger, .total-row-sm,
+                              | .total-row-lg.
+-------------------------------------------------------------------------------
+[2026-07-10] [16:00] | FEATURE | .env + .env.example + .gitignore + index.html +
+                              | js/supabase.js + js/supabase.local.example.js:
+                              | Credenciais movidas para .env (gitignorado).
+                              | supabase.js agora suporta window.__SUPABASE_CONFIG
+                              | (vindo de supabase.local.js, também gitignorado).
+                              | .env.example e supabase.local.example.js são
+                              | templates commitados. index.html carrega
+                              | supabase.local.js antes de supabase.js.
+                              | .gitignore atualizado (raiz e local).
+-------------------------------------------------------------------------------
+[2026-07-10] [16:30] | FIX     | dashboard.js + schema.sql: Corrigido Faturamento
+                              | zerado na tabela de fechamentos anteriores para
+                              | registros antigos (sem total_revenue).
+                              | fetchAllClosings: busca soma de itens positivos
+                              | de closing_items para datas com total_revenue=0.
+                              | schema.sql: backfill SQL para preencher
+                              | total_revenue de registros existentes.
+-------------------------------------------------------------------------------
+[2026-07-10] [17:00] | FIX     | style.css + dashboard.js: Corrigido alinhamento dos
+                              | seletores de mês na previsão de faturamento.
+                              | Movido .forecast-selectors para dentro de
+                              | .forecast-header (mesma linha flex). Ajustado
+                              | align-items para center, removido margin-bottom
+                              | de .forecast-selectors, alterado gap para 12px.
+-------------------------------------------------------------------------------
+[2026-07-10] [17:35] | FIX     | style.css: Responsividade aprimorada para mobile.
+                              | 3 breakpoints: 768px (forecast selectors empilham),
+                              | 600px (cards 1fr 1fr, inputs full width, fontes
+                              | ajustadas, botões com min-height 44px para toque),
+                              | 400px (fontes menores, padding reduzido, tabela
+                              | compacta). Dark mode mantido em todos os breakpoints.
+-------------------------------------------------------------------------------
+[2026-07-10] [17:45] | FIX     | style.css: Cards no mobile mais retangulares
+                              | (padding reduzido, fontes menores, ícones menores).
+                              | Forecast selectors: overflow hidden removido do
+                              | card genérico (só no #chartCard). Em 768px os
+                              | selectors empilham verticalmente (flex-direction:
+                              | column). Em 600px label fica acima do select.
+                              | Select com max-width: 180px no desktop.
+-------------------------------------------------------------------------------
+[2026-07-10] [18:00] | FIX     | style.css: Layout desktop expandido. #app
+                              | max-width: 1100px → 1400px, padding lateral
+                              | aumentado (16px → 32px). Cards grid maior
+                              | (minmax 230px → 280px, gap 16px → 20px).
+                              | Novo breakpoint 1200px+: padding 48px lateral,
+                              | card padding 28px, card-value 2rem.
+                              | Dashboard grid margin-bottom 24px → 32px.
+-------------------------------------------------------------------------------
+[2026-07-10] [17:55] | FEATURE | style.css: Paleta de cores substituída pela
+                              | nova paleta OKLCH baseada em outro projeto.
+                              | :root com cores claras e [data-theme="dark"]
+                              | com cores escuras, usando oklch() em vez de
+                              | hex/rgba. Primary: azul (oklch 0.6231 0.1880
+                              | 259.8145). Radius ajustado de 12px para 6px.
+                              | Shadows convertidos para hsl com opacidade.
+                              | Todas as variáveis derivadas (bg-card, bg-input,
+                              | forecast/inconsistency/danger hover) adaptadas.
+-------------------------------------------------------------------------------
+
